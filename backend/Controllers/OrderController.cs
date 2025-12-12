@@ -29,5 +29,17 @@ namespace Backend.Controllers
             var orders = await _orderRepository.GetAllAsync(userId, role);
             return Ok(_mapper.Map<List<OrderDto>>(orders));
         }
+
+        [HttpPut("{id:Guid}/status")]
+        public async Task<IActionResult> UpdateStatus([FromRoute] Guid id, [FromBody] UpdateOrderStatusDto statusDto)
+        {
+            var order = await _orderRepository.GetByIdAsync(id);
+            if (order == null) return NotFound();
+
+            order.Status = statusDto.Status;
+            await _orderRepository.UpdateAsync(id, order);
+
+            return Ok(_mapper.Map<OrderDto>(order));
+        }
     }
 }

@@ -73,6 +73,18 @@ namespace Backend.Controllers
             }
 
             return Ok(new { Message = "User registered successfully! Please login." });
+
+            //var jwtToken = _tokenRepository.CreateJWTToken(user);
+
+            //var response = new LoginResponseDto
+            //{
+            //    JwtToken = jwtToken,
+            //    Username = user.Username,
+            //    Role = user.Role
+            //};
+
+            //return Ok(response);
+
         }
 
         [HttpPost("Login")]

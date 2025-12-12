@@ -77,6 +77,47 @@ const SupplierOrders = () => {
         }
     };
 
+    // Modal State
+    const [showCancelModal, setShowCancelModal] = useState(false);
+    const [selectedOrderId, setSelectedOrderId] = useState(null);
+
+    const handleCancelOrderClick = (orderId) => {
+        setSelectedOrderId(orderId);
+        setShowCancelModal(true);
+    };
+
+    const confirmCancelOrder = async () => {
+        if (!selectedOrderId) return;
+
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5081/api/Order/${selectedOrderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: 'Cancelled' })
+            });
+
+            if (response.ok) {
+                // Update UI
+                const orderToMove = activeOrders.find(o => o.id === selectedOrderId);
+                if (orderToMove) {
+                    setActiveOrders(prev => prev.filter(o => o.id !== selectedOrderId));
+                    setOrderHistory(prev => [{ ...orderToMove, status: 'Cancelled' }, ...prev]);
+                }
+                setShowCancelModal(false);
+                setSelectedOrderId(null);
+            } else {
+                alert("Failed to cancel order.");
+            }
+        } catch (error) {
+            console.error("Error cancelling order:", error);
+            alert("Error cancelling order.");
+        }
+    };
+
     const getStatusColor = (status) => {
         switch (status) {
             case 'Pending Approval': return '#f59e0b'; // Amber
@@ -90,12 +131,42 @@ const SupplierOrders = () => {
             case 'Negotiation In Progress': return '#f97316'; // Orange
             case 'Declined': return '#ef4444'; // Red
             case 'Waiting for Approval': return '#f59e0b'; // Amber
+            case 'Confirmed': return '#10b981'; // Green (Confirmed Order)
             default: return '#64748b'; // Slate
         }
     };
 
     return (
         <div className="fade-in" style={{ minHeight: '100vh', background: '#f8fafc' }}>
+            {/* Modal Overlay */}
+            {showCancelModal && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+                    background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+                }}>
+                    <div style={{ background: 'white', padding: '2rem', borderRadius: '8px', width: '400px', maxWidth: '90%' }}>
+                        <h3 style={{ fontSize: '1.25rem', fontWeight: '600', marginBottom: '1rem' }}>Cancel Order</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '1.5rem' }}>
+                            Are you sure you want to cancel this order? This action cannot be undone.
+                        </p>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                            <button
+                                onClick={() => setShowCancelModal(false)}
+                                style={{ padding: '0.5rem 1rem', border: '1px solid #e2e8f0', background: 'white', borderRadius: '6px' }}
+                            >
+                                No, Keep Order
+                            </button>
+                            <button
+                                onClick={confirmCancelOrder}
+                                style={{ padding: '0.5rem 1rem', background: '#ef4444', color: 'white', borderRadius: '6px', border: 'none' }}
+                            >
+                                Yes, Cancel Order
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Navigation Bar */}
             <nav style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '1rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
@@ -189,7 +260,7 @@ const SupplierOrders = () => {
 
                                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                                             <button
-                                                onClick={() => handleCancelOrder(order.id)}
+                                                onClick={() => handleCancelOrderClick(order.id)}
                                                 className="btn"
                                                 style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', color: '#ef4444', border: '1px solid #fee2e2', background: '#fef2f2' }}
                                             >

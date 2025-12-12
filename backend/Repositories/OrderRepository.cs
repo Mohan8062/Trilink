@@ -40,5 +40,29 @@ namespace Backend.Repositories
 
             return await query.ToListAsync();
         }
+
+        public async Task<Order?> GetByIdAsync(Guid id)
+        {
+            return await _context.Orders
+                .Include(o => o.Product)
+                .Include(o => o.Buyer)
+                .Include(o => o.Seller)
+                .FirstOrDefaultAsync(o => o.Id == id);
+        }
+
+        public async Task<Order?> UpdateAsync(Guid id, Order order)
+        {
+            var existingOrder = await _context.Orders.FirstOrDefaultAsync(x => x.Id == id);
+            if (existingOrder == null)
+            {
+                return null;
+            }
+
+            existingOrder.Status = order.Status;
+            // Update other fields if necessary
+            
+            await _context.SaveChangesAsync();
+            return existingOrder;
+        }
     }
 }
