@@ -148,9 +148,9 @@ const SearchProducts = () => {
                 initialOfferAmount: selectedProduct.priceValue,
                 message: "I accept the initial offer."
             });
-            alert(`Order created for ${selectedProduct.name}! Status: In Progress.`);
             setShowModal(false);
-            navigate('/buyer/orders');
+            const userId = localStorage.getItem('userId');
+            navigate(`/buyer/orders/${userId}`);
         } catch (error) {
             console.error("Failed to create negotiation", error);
             alert("Failed to create order: " + error.message);
@@ -171,7 +171,8 @@ const SearchProducts = () => {
             });
             alert(`Counter offer sent for ${selectedProduct.name}!`);
             setShowModal(false);
-            navigate('/buyer/orders'); // Or negotiation page
+            const userId = localStorage.getItem('userId');
+            navigate(`/buyer/negotiation/${userId}`);
         } catch (error) {
             console.error("Failed to create negotiation", error);
             alert("Failed to send counter offer: " + error.message);
@@ -185,17 +186,18 @@ const SearchProducts = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)' }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
-                        <a href="#" onClick={() => navigate('/buyer/dashboard')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
                         <a href="#" style={{ color: 'var(--text-main)' }}>Search Products</a>
-                        <a href="#" style={{ color: 'var(--text-muted)' }}>My Offers</a>
-                        <a href="#" onClick={() => navigate('/buyer/orders')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/negotiation/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>My Offers</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/orders/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/logistics-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <Bell size={20} color="var(--text-muted)" />
                     <div
                         style={{ width: '32px', height: '32px', background: '#e2e8f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/buyer/profile')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/profile/${userId}`); }}
                     >
                         <User size={18} color="var(--text-muted)" />
                     </div>

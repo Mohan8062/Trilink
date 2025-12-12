@@ -52,8 +52,8 @@ const SupplierDashboard = () => {
 
     const stats = [
         { label: 'Total Active Products', value: statsData.totalActiveProducts, icon: <Package size={24} />, color: 'var(--text-main)' },
-        { label: 'Ongoing Products', value: statsData.ongoingOrders, icon: <Handshake size={24} />, color: 'var(--text-main)' },
-        { label: 'Completed', value: statsData.completedOrders, icon: <ShoppingBag size={24} />, color: 'var(--text-main)' },
+        { label: 'Active Orders', value: statsData.ongoingOrders, icon: <Handshake size={24} />, color: 'var(--text-main)' },
+        { label: 'Completed Orders', value: statsData.completedOrders, icon: <ShoppingBag size={24} />, color: 'var(--text-main)' },
     ];
 
     return (
@@ -64,16 +64,16 @@ const SupplierDashboard = () => {
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)' }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
                         <a href="#" style={{ color: 'var(--text-main)' }}>Dashboard</a>
-                        <a href="#" onClick={() => navigate('/supplier/products')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Products</a>
-                        <a href="#" onClick={() => navigate('/supplier/orders')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
-                        <a href="#" onClick={() => navigate('/supplier/logistics-job-creation')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/products/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Products</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/orders/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/logistics-job-creation/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <Bell size={20} color="var(--text-muted)" />
                     <div
                         style={{ width: '32px', height: '32px', background: '#e2e8f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/supplier/profile')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/profile/${userId}`); }}
                     >
                         <User size={18} color="var(--text-muted)" />
                     </div>
@@ -103,7 +103,7 @@ const SupplierDashboard = () => {
                     {/* Add Product Card */}
                     <div className="card" style={{ padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <button
-                            onClick={() => navigate('/supplier/add-product')}
+                            onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/add-product/${userId}`); }}
                             style={{ background: 'black', color: 'white', padding: '0.75rem 1.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}
                         >
                             <Plus size={18} /> Add Product
@@ -121,6 +121,7 @@ const SupplierDashboard = () => {
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
                             <thead style={{ background: '#f8fafc', color: 'var(--text-muted)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 <tr>
+                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontWeight: '600' }}>Offer ID</th>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontWeight: '600' }}>Buyer</th>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontWeight: '600' }}>Product</th>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontWeight: '600' }}>Offered Price</th>
@@ -136,6 +137,7 @@ const SupplierDashboard = () => {
                                 ) : (
                                     recentOffers.map((offer) => (
                                         <tr key={offer.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '1.25rem 1.5rem', color: 'var(--text-muted)', fontFamily: 'monospace' }}>#{offer.id.substring(0, 8)}</td>
                                             <td style={{ padding: '1.25rem 1.5rem', fontWeight: '500' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                                                     <div style={{ width: '32px', height: '32px', background: '#f1f5f9', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: '600' }}>
@@ -171,8 +173,8 @@ const SupplierDashboard = () => {
                                                                 if (response.ok) {
                                                                     // Update UI: Remove from list
                                                                     setRecentOffers(prev => prev.filter(o => o.id !== offer.id));
-                                                                    // Navigate to Orders (optional, or just show success)
-                                                                    navigate('/supplier/orders');
+                                                                    const userId = localStorage.getItem('userId');
+                                                                    navigate(`/supplier/orders/${userId}`);
                                                                 } else {
                                                                     console.error("Failed to accept offer");
                                                                     alert("Failed to accept offer. Please try again.");

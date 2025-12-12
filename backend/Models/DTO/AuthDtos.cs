@@ -46,5 +46,7 @@ namespace Backend.Models.DTO
         public string JwtToken { get; set; }
         public string Username { get; set; }
         public string Role { get; set; }
+        // Adding UserId to support dynamic URLs
+        public Guid UserId { get; set; } 
     }
 }

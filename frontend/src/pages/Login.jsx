@@ -16,6 +16,9 @@ const Login = () => {
     };
 
     const handleSubmit = async () => {
+        // Clear previous session data immediately
+        localStorage.clear();
+
         setLoading(true);
         setError('');
         try {
@@ -37,16 +40,17 @@ const Login = () => {
             // Store token and redirect
             localStorage.setItem('token', data.jwtToken);
             localStorage.setItem('role', data.role); // Store role for persistence
+            localStorage.setItem('userId', data.userId);
 
             const role = data.role.toLowerCase();
             if (role === 'supplier') {
-                navigate('/supplier/dashboard');
+                navigate(`/supplier/dashboard/${data.userId}`);
             } else if (role === 'buyer') {
-                navigate('/buyer/dashboard');
+                navigate(`/buyer/dashboard/${data.userId}`);
             } else if (role === 'logistics') {
-                navigate('/logistics/dashboard');
+                navigate(`/logistics/dashboard/${data.userId}`);
             } else {
-                navigate('/buyer/dashboard');
+                navigate(`/buyer/dashboard/${data.userId}`);
             }
         } catch (err) {
             console.error('Login error:', err);

@@ -79,9 +79,26 @@ const Registration = () => {
                 submitData.append('panCardFile', formData.documents.panCard); // Changed to match DTO property
             }
 
-            await api.post('/auth/register', submitData, true);
+            // await api.post('/auth/register', submitData, true);
+            const response = await api.post('/auth/register', submitData, true);
+            if (response && response.jwtToken) {
+                localStorage.setItem('token', response.jwtToken);
+                localStorage.setItem('username', response.username);
+                localStorage.setItem('role', response.role);
+                // Also store userId if backend returns it on registration (need to ensure backend does this or make another call)
+                // Assuming backend update for Register is meant to align with Login:
+                if (response.userId) {
+                    localStorage.setItem('userId', response.userId);
+                }
+            }
+            // Temporarily redirect to simple login or dashboard if ID is missing, but goal is dynamic
+            // Ideally we should update Register endpoint to return UserId too.
+            // For now, let's keep it simple or assume Login flow is preferred. 
+            // Given user code: "setStep(5)" -> completion step, then likely a button to "Go to Dashboard"
 
-            setStep(5); // Move to completion step on success
+            setStep(5);
+
+            // setStep(5); // Move to completion step on success
         } catch (err) {
             console.error('Registration error:', err);
             setError(err.message);
@@ -600,12 +617,13 @@ const Step5Complete = ({ role, navigate }) => {
 
             <button
                 onClick={() => {
+                    const userId = localStorage.getItem('userId');
                     if (role === 'supplier') {
-                        navigate('/supplier/dashboard');
+                        navigate(`/supplier/dashboard/${userId}`);
                     } else if (role === 'buyer') {
-                        navigate('/buyer/dashboard');
+                        navigate(`/buyer/dashboard/${userId}`);
                     } else if (role === 'logistics') {
-                        navigate('/logistics/dashboard');
+                        navigate(`/logistics/dashboard/${userId}`);
                     } else {
                         navigate('/dashboard', { state: { role } });
                     }

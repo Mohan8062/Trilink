@@ -45,18 +45,18 @@ const AssignedJobs = () => {
             {/* Header */}
             <header style={{ background: 'white', borderBottom: '1px solid var(--border)', padding: '1rem 3rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', cursor: 'pointer' }} onClick={() => navigate('/logistics/dashboard')}>TriLink</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', cursor: 'pointer' }} onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
-                        <a href="#" onClick={() => navigate('/logistics/dashboard')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
-                        <span onClick={() => navigate('/logistics/available-jobs')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Search Jobs</span>
-                        <span onClick={() => navigate('/logistics/assigned-jobs')} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Assigned Jobs</span>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/available-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Search Jobs</span>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/assigned-jobs/${userId}`); }} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Assigned Jobs</span>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <Bell size={20} color="var(--text-muted)" />
                     <div
                         style={{ width: '32px', height: '32px', background: '#e2e8f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/logistics/profile')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/profile/${userId}`); }}
                     >
                         <User size={18} color="var(--text-muted)" />
                     </div>
@@ -66,7 +66,7 @@ const AssignedJobs = () => {
             <main className="container" style={{ padding: '3rem 1rem', maxWidth: '1200px' }}>
                 <div style={{ marginBottom: '2rem' }}>
                     <button
-                        onClick={() => navigate('/logistics/dashboard')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }}
                         style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', marginBottom: '1rem' }}
                     >
                         <ChevronLeft size={20} /> Back to Dashboard
@@ -109,7 +109,7 @@ const AssignedJobs = () => {
                                     <td style={{ padding: '1rem 1.5rem' }}>
                                         <button
                                             className="btn"
-                                            onClick={() => navigate(`/logistics/route-suggestion/${job.id}`)}
+                                            onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/route-suggestion/${job.id}/${userId}`); }}
                                             style={{
                                                 padding: '0.4rem 0.75rem',
                                                 fontSize: '0.85rem',

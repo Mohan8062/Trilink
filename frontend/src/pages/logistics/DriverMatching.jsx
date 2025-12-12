@@ -52,7 +52,8 @@ const DriverMatching = () => {
         if (selectedDriver) {
             setShowSuccess(true);
             setTimeout(() => {
-                navigate('/logistics/dashboard');
+                const userId = localStorage.getItem('userId');
+                navigate(`/logistics/dashboard/${userId}`);
             }, 2000);
         }
     };

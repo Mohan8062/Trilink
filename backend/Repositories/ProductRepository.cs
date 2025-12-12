@@ -13,9 +13,16 @@ namespace Backend.Repositories
             _context = context;
         }
 
-        public async Task<List<Product>> GetAllAsync(string? filterOn = null, string? filterQuery = null)
+        public async Task<List<Product>> GetAllAsync(string? filterOn = null, string? filterQuery = null, Guid? userId = null, string? role = null)
         {
             var products = _context.Products.Include(p => p.Supplier).AsQueryable();
+
+            // Filter by Supplier if the user is a Supplier requesting their own products
+            // Note: If a Buyer is browsing, we show all (or filter by generic search)
+            if (userId.HasValue && !string.IsNullOrEmpty(role) && role.Equals("Supplier", StringComparison.OrdinalIgnoreCase))
+            {
+                products = products.Where(p => p.SupplierId == userId.Value);
+            }
 
             if (!string.IsNullOrWhiteSpace(filterOn) && !string.IsNullOrWhiteSpace(filterQuery))
             {

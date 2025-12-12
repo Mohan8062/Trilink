@@ -1,39 +1,72 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { api } from '../../api/api';
 import { Bell, User, Handshake, Package, Star, Search } from 'lucide-react';
 import '../../index.css';
 
 const BuyerDashboard = () => {
     const navigate = useNavigate();
 
+    const [statsData, setStatsData] = useState({
+        ongoingOrders: 0,
+        completedOrders: 0
+    });
+
+    const [recentOrders, setRecentOrders] = useState([]);
+
+    useEffect(() => {
+        const fetchDashboardData = async () => {
+            try {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+
+                // Fetch Stats
+                const statsResponse = await fetch('http://localhost:5081/api/DashboardStats/buyer', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (statsResponse.ok) {
+                    const data = await statsResponse.json();
+                    setStatsData(data);
+                }
+
+                // Fetch Recent Orders (active orders only, limit to 5)
+                const ordersData = await api.get('/Order');
+                if (ordersData) {
+                    const activeOrders = ordersData
+                        .filter(o => o.status !== 'Completed' && o.status !== 'Cancelled')
+                        .slice(0, 5) // Show only 5 most recent
+                        .map(order => ({
+                            id: order.id,
+                            supplier: order.sellerName || 'Unknown Supplier',
+                            product: order.productName || 'Unknown Product',
+                            amount: `₹${order.finalPrice}`,
+                            status: order.status
+                        }));
+                    setRecentOrders(activeOrders);
+                }
+
+            } catch (error) {
+                console.error("Error fetching dashboard data:", error);
+            }
+        };
+
+        fetchDashboardData();
+    }, []);
+
     const stats = [
-        { label: 'Ongoing Orders', value: '24', icon: <Handshake size={24} />, color: 'var(--text-main)' },
-        { label: 'Completed Orders', value: '15', icon: <Package size={24} />, color: 'var(--text-main)' },
-        // { label: 'Recommended Suppliers', value: '8', change: 'New', icon: <Star size={24} />, color: 'var(--text-main)' },
-    ];
-
-    const suppliers = [
-        { id: 1, name: 'MetalWorks Co.', category: 'Steel & Aluminum', rating: 4.2 },
-        { id: 2, name: 'Copper Solutions', category: 'Copper & Brass', rating: 4.8 },
-        { id: 3, name: 'Plastics Inc.', category: 'Polymers & Resins', rating: 4.5 },
-        { id: 4, name: 'Global Metals', category: 'Multi-Material', rating: 4.3 },
-    ];
-
-    const recentOrders = [
-        { id: 'ORD-2025-001', supplier: 'Global Textiles Co.', product: 'Cotton Yarn', amount: '₹1,25,000', status: 'Pending', date: '2025-01-20' },
-        { id: 'ORD-2025-002', supplier: 'MetalWorks Ltd.', product: 'Steel Sheets', amount: '₹4,50,000', status: 'Dispatched', date: '2025-01-18' },
-        { id: 'ORD-2025-003', supplier: 'Alpha Chemicals', product: 'Industrial Solvents', amount: '₹85,000', status: 'Delivered', date: '2025-01-15' },
+        { label: 'Ongoing Orders', value: statsData.ongoingOrders, icon: <Handshake size={24} />, color: 'var(--text-main)' },
+        { label: 'Completed Orders', value: statsData.completedOrders, icon: <Package size={24} />, color: 'var(--text-main)' },
     ];
 
     const getStatusColor = (status) => {
-        switch (status) {
-            case 'Pending': return '#f59e0b';
-            case 'Negotiation': return '#f97316';
-            case 'Accepted': return '#3b82f6';
-            case 'Dispatched': return '#06b6d4';
-            case 'Delivered': return '#10b981';
-            default: return '#64748b';
-        }
+        if (status === 'Confirmed') return '#f59e0b';
+        if (status.includes('Waiting')) return '#f59e0b';
+        if (status.includes('Payment') && !status.includes('Completed')) return '#ef4444';
+        if (status.includes('Negotiation')) return '#f97316';
+        if (status.includes('Completed')) return '#3b82f6';
+        if (status.includes('Dispatched')) return '#06b6d4';
+        if (status.includes('Delivered')) return '#10b981';
+        return '#64748b';
     };
 
     return (
@@ -43,18 +76,18 @@ const BuyerDashboard = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)' }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
-                        <a href="#" style={{ color: 'var(--text-main)' }}>Dashboard</a>
-                        <a href="#" onClick={() => navigate('/buyer/search')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Search Products</a>
-                        <a href="#" style={{ color: 'var(--text-muted)' }}>My Offers</a>
-                        <a href="#" onClick={() => navigate('/buyer/orders')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
-                        <a href="#" onClick={() => navigate('/buyer/logistics-jobs')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/dashboard/${userId}`); }} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Dashboard</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/search/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Search Products</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/negotiation/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>My Offers</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/orders/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Orders</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/logistics-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <Bell size={20} color="var(--text-muted)" />
                     <div
                         style={{ width: '32px', height: '32px', background: '#e2e8f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/buyer/profile')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/profile/${userId}`); }}
                     >
                         <User size={18} color="var(--text-muted)" />
                     </div>
@@ -75,7 +108,6 @@ const BuyerDashboard = () => {
                                 <div style={{ width: '40px', height: '40px', background: '#f1f5f9', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     {stat.icon}
                                 </div>
-                                <span style={{ fontSize: '0.85rem', color: '#10b981', fontWeight: '500' }}>{stat.change}</span>
                             </div>
                             <div>
                                 <div style={{ fontSize: '2rem', fontWeight: '700', lineHeight: '1' }}>{stat.value}</div>
@@ -85,13 +117,11 @@ const BuyerDashboard = () => {
                     ))}
                 </div>
 
-
-
                 {/* Recent Orders */}
                 <div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                         <h3 style={{ fontSize: '1.1rem', fontWeight: '600' }}>Recent Orders</h3>
-                        <a href="#" style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>View All</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/orders/${userId}`); }} style={{ fontSize: '0.9rem', color: 'var(--text-muted)', cursor: 'pointer' }}>View All</a>
                     </div>
                     <div className="card" style={{ padding: '0', overflow: 'hidden' }}>
                         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.95rem' }}>
@@ -106,26 +136,37 @@ const BuyerDashboard = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {recentOrders.map((order) => (
-                                    <tr key={order.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                                        <td style={{ padding: '1rem 1.5rem', fontWeight: '500' }}>{order.id}</td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>{order.supplier}</td>
-                                        <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{order.product}</td>
-                                        <td style={{ padding: '1rem 1.5rem', fontWeight: '500' }}>{order.amount}</td>
-                                        <td style={{ padding: '1rem 1.5rem' }}>
-                                            <span style={{
-                                                background: `${getStatusColor(order.status)}15`,
-                                                color: getStatusColor(order.status),
-                                                padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500'
-                                            }}>
-                                                {order.status}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
-                                            <button style={{ background: 'white', border: '1px solid var(--border)', padding: '0.4rem 1rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}>View Details</button>
-                                        </td>
+                                {recentOrders.length === 0 ? (
+                                    <tr>
+                                        <td colSpan="6" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>No active orders</td>
                                     </tr>
-                                ))}
+                                ) : (
+                                    recentOrders.map((order) => (
+                                        <tr key={order.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                                            <td style={{ padding: '1rem 1.5rem', fontWeight: '500', fontFamily: 'monospace', color: 'var(--text-muted)' }}>#{order.id.substring(0, 8)}</td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>{order.supplier}</td>
+                                            <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{order.product}</td>
+                                            <td style={{ padding: '1rem 1.5rem', fontWeight: '500' }}>{order.amount}</td>
+                                            <td style={{ padding: '1rem 1.5rem' }}>
+                                                <span style={{
+                                                    background: `${getStatusColor(order.status)}15`,
+                                                    color: getStatusColor(order.status),
+                                                    padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500'
+                                                }}>
+                                                    {order.status}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '1rem 1.5rem', textAlign: 'right' }}>
+                                                <button
+                                                    onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/buyer/orders/${userId}`); }}
+                                                    style={{ background: 'white', border: '1px solid var(--border)', padding: '0.4rem 1rem', borderRadius: '6px', fontSize: '0.85rem', cursor: 'pointer' }}
+                                                >
+                                                    View Details
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    ))
+                                )}
                             </tbody>
                         </table>
                     </div>

@@ -72,18 +72,19 @@ namespace Backend.Controllers
                 return BadRequest(new { Message = "Something went wrong" });
             }
 
-            return Ok(new { Message = "User registered successfully! Please login." });
+            //return Ok(new { Message = "User registered successfully! Please login." });
 
-            //var jwtToken = _tokenRepository.CreateJWTToken(user);
+            var jwtToken = _tokenRepository.CreateJWTToken(user);
 
-            //var response = new LoginResponseDto
-            //{
-            //    JwtToken = jwtToken,
-            //    Username = user.Username,
-            //    Role = user.Role
-            //};
+            var response = new LoginResponseDto
+            {
+                JwtToken = jwtToken,
+                Username = user.Username,
+                Role = user.Role,
+                UserId = user.Id
+            };
 
-            //return Ok(response);
+            return Ok(response);
 
         }
 
@@ -103,7 +104,8 @@ namespace Backend.Controllers
             {
                 JwtToken = jwtToken,
                 Username = user.Username,
-                Role = user.Role
+                Role = user.Role,
+                UserId = user.Id
             };
 
             return Ok(response);

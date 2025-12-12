@@ -24,7 +24,20 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] string? filterOn, [FromQuery] string? filterQuery)
         {
-            var productsDomain = await _productRepository.GetAllAsync(filterOn, filterQuery);
+            // Extract User Context if available (it might be anonymous for public catalog, but for Supplier Dashboard it is authenticated)
+            Guid? userId = null;
+            string? role = null;
+
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == "id");
+            var roleClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role);
+
+            if (userIdClaim != null && roleClaim != null)
+            {
+                userId = Guid.Parse(userIdClaim.Value);
+                role = roleClaim.Value;
+            }
+
+            var productsDomain = await _productRepository.GetAllAsync(filterOn, filterQuery, userId, role);
             var productsDto = _mapper.Map<List<ProductResponseDto>>(productsDomain);
             return Ok(productsDto);
         }

@@ -53,17 +53,36 @@ const SupplierOrders = () => {
     }, [location.key]); // Re-fetch on navigation/mount
 
 
-    const handlePaymentReceived = (orderId) => {
-        const orderToMove = activeOrders.find(o => o.id === orderId);
-        if (orderToMove) {
-            // Remove from active
-            setActiveOrders(prev => prev.filter(o => o.id !== orderId));
-            // Add to history with new status
-            setOrderHistory(prev => [{ ...orderToMove, status: 'Order Completed' }, ...prev]);
-            // Optional: alert or switch tab
-            // setActiveTab('history'); 
+
+    const handlePaymentReceived = async (orderId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch(`http://localhost:5081/api/Order/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: 'Completed' })
+            });
+
+            if (response.ok) {
+                // Update local state after successful API call
+                const orderToMove = activeOrders.find(o => o.id === orderId);
+                if (orderToMove) {
+                    setActiveOrders(prev => prev.filter(o => o.id !== orderId));
+                    setOrderHistory(prev => [{ ...orderToMove, status: 'Completed' }, ...prev]);
+                }
+            } else {
+                console.error("Failed to update order status");
+                alert("Failed to mark payment as received. Please try again.");
+            }
+        } catch (err) {
+            console.error("Error updating order status:", err);
+            alert("Error updating order status.");
         }
     };
+
 
     const handleCancelOrder = (orderId) => {
         if (confirm('Are you sure you want to cancel this order?')) {
@@ -172,17 +191,17 @@ const SupplierOrders = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)' }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
-                        <a href="#" onClick={() => navigate('/supplier/dashboard')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
-                        <a href="#" onClick={() => navigate('/supplier/products')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Products</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/products/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Products</a>
                         <a href="#" style={{ color: 'var(--text-main)', cursor: 'default' }}>Orders</a>
-                        <a href="#" onClick={() => navigate('/supplier/logistics-job-creation')} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
+                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/logistics-job-creation/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Logistics Jobs</a>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
                     <Bell size={20} color="var(--text-muted)" />
                     <div
                         style={{ width: '32px', height: '32px', background: '#e2e8f0', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                        onClick={() => navigate('/supplier/profile')}
+                        onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/supplier/profile/${userId}`); }}
                     >
                         <User size={18} color="var(--text-muted)" />
                     </div>
