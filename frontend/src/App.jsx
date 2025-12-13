@@ -12,6 +12,7 @@ import SupplierProfile from './pages/supplier/SupplierProfile';
 import LogisticsJobCreation from './pages/supplier/LogisticsJobCreation';
 import SupplierNegotiation from './pages/negotiation/SupplierNegotiation';
 import OfferSummary from './pages/negotiation/OfferSummary';
+import SupplierLogisticsJobManagement from './pages/supplier/SupplierLogisticsJobManagement';
 import BuyerDashboard from './pages/buyer/BuyerDashboard';
 import BuyerProfile from './pages/buyer/BuyerProfile';
 import SearchProducts from './pages/buyer/SearchProducts';
@@ -20,8 +21,10 @@ import BuyerOfferSummary from './pages/buyer/OfferSummary';
 import InvoicePreview from './pages/buyer/InvoicePreview';
 import BuyerOrders from './pages/buyer/BuyerOrders';
 import BuyerLogisticsJobCreation from './pages/buyer/BuyerLogisticsJobCreation';
+import BuyerLogisticsJobManagement from './pages/buyer/BuyerLogisticsJobManagement';
 import LogisticsDashboard from './pages/logistics/LogisticsDashboard';
 import AvailableJobs from './pages/logistics/AvailableJobs';
+import QuotedJobs from './pages/logistics/QuotedJobs';
 import AssignedJobs from './pages/logistics/AssignedJobs';
 import RouteSuggestion from './pages/logistics/RouteSuggestion';
 import RouteSummary from './pages/logistics/RouteSummary';
@@ -50,6 +53,7 @@ function App() {
         <Route path="/supplier/orders" element={<SupplierOrders />} /> {/* Fallback */}
         <Route path="/supplier/profile/:userId" element={<SupplierProfile />} />
         <Route path="/supplier/logistics-job-creation/:userId" element={<LogisticsJobCreation />} />
+        <Route path="/supplier/logistics-job-management/:userId" element={<SupplierLogisticsJobManagement />} />
         <Route path="/supplier/negotiation/:userId" element={<SupplierNegotiation />} />
         <Route path="/negotiation/offer-summary/:userId" element={<OfferSummary />} />
 
@@ -65,11 +69,13 @@ function App() {
         <Route path="/buyer/orders/:userId" element={<BuyerOrders />} />
         <Route path="/buyer/orders" element={<BuyerOrders />} /> {/* Fallback */}
         <Route path="/buyer/logistics-jobs/:userId" element={<BuyerLogisticsJobCreation />} />
+        <Route path="/buyer/logistics-job-management/:userId" element={<BuyerLogisticsJobManagement />} />
 
         {/* Logistics Routes */}
         <Route path="/logistics/dashboard/:userId" element={<LogisticsDashboard />} />
         <Route path="/logistics/dashboard" element={<LogisticsDashboard />} /> {/* Fallback */}
         <Route path="/logistics/available-jobs/:userId" element={<AvailableJobs />} />
+        <Route path="/logistics/quoted-jobs/:userId" element={<QuotedJobs />} />
         <Route path="/logistics/assigned-jobs/:userId" element={<AssignedJobs />} />
         <Route path="/logistics/route-suggestion/:userId/:id" element={<RouteSuggestion />} />
         <Route path="/logistics/route-summary/:userId" element={<RouteSummary />} />

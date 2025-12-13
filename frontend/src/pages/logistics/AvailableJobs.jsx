@@ -9,81 +9,109 @@ const AvailableJobs = () => {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedLocation, setSelectedLocation] = useState('All');
-    // Initialize status from location state if available, otherwise default to 'All'
-    const [selectedStatus, setSelectedStatus] = useState(location.state?.filter || 'All'); // New Filter State
+    const [selectedStatus, setSelectedStatus] = useState(location.state?.filter || 'All');
+    const [jobs, setJobs] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     // Modal State
     const [showQuoteModal, setShowQuoteModal] = useState(false);
     const [selectedJob, setSelectedJob] = useState(null);
     const [quoteForm, setQuoteForm] = useState({ amount: '', date: '' });
-    const [submittedQuotes, setSubmittedQuotes] = useState({}); // Track submitted quotes by Job ID
+    const [submittedQuotes, setSubmittedQuotes] = useState({});
 
-    // Load quotes from LocalStorage on mount
+    // Fetch jobs and my quotes from API
     React.useEffect(() => {
-        const storedQuotes = JSON.parse(localStorage.getItem('submittedQuotes') || '{}');
-        setSubmittedQuotes(storedQuotes);
+        fetchJobs();
+        fetchMyQuotes();
     }, []);
 
-    // Updated Mock Data with Detailed Fields as requested
-    const jobs = [
-        {
-            id: 'JOB-2025-001',
-            orderId: 'ORD-98765',
-            pickupAddressLine1: '123, Industrial Area',
-            pickupAddressLine2: 'Phase 2, Guindy',
-            pickupCity: 'Chennai',
-            pickupState: 'Tamil Nadu',
-            pickupPincode: '600032',
-            pickupCountry: 'India',
-            dropAddressLine1: '456, GIDC Estate',
-            dropAddressLine2: 'Near Highway',
-            dropCity: 'Ahmedabad',
-            dropState: 'Gujarat',
-            dropPincode: '380015',
-            dropCountry: 'India',
-            estimatedWeightKg: 2500,
-            status: 'Pending',
-            eta: 'Jan 25, 2025'
-        },
-        {
-            id: 'JOB-2025-002',
-            orderId: 'ORD-98766',
-            pickupAddressLine1: '78, Electronic City',
-            pickupAddressLine2: 'Hosur Road',
-            pickupCity: 'Bangalore',
-            pickupState: 'Karnataka',
-            pickupPincode: '560100',
-            pickupCountry: 'India',
-            dropAddressLine1: '890, Technopark',
-            dropAddressLine2: 'Kazhakoottam',
-            dropCity: 'Thiruvananthapuram',
-            dropState: 'Kerala',
-            dropPincode: '695581',
-            dropCountry: 'India',
-            estimatedWeightKg: 1800,
-            status: 'Pending',
-            eta: 'Jan 28, 2025'
-        },
-        {
-            id: 'JOB-2025-003',
-            orderId: 'ORD-98767',
-            pickupAddressLine1: 'Plot 22, Sector 5',
-            pickupAddressLine2: 'Salt Lake',
-            pickupCity: 'Kolkata',
-            pickupState: 'West Bengal',
-            pickupPincode: '700091',
-            pickupCountry: 'India',
-            dropAddressLine1: '12, Okhla Ind. Estate',
-            dropAddressLine2: 'Phase 3',
-            dropCity: 'New Delhi',
-            dropState: 'Delhi',
-            dropPincode: '110020',
-            dropCountry: 'India',
-            estimatedWeightKg: 5000,
-            status: 'Urgent',
-            eta: 'Jan 22, 2025'
+    const fetchMyQuotes = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5081/api/BuyerLogisticsJob/my-quotes', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                const quotes = await response.json();
+                const quotesMap = {};
+                quotes.forEach(q => {
+                    quotesMap[`JOB-${q.jobId.substring(0, 8).toUpperCase()}`] = {
+                        amount: q.quoteAmount,
+                        date: new Date(q.createdAt).toLocaleDateString(), // Or quoted delivery date if available
+                        timestamp: q.createdAt
+                    };
+                    // Also Key by full ID if needed, but ID mapping in fetchJobs uses formatted ID
+                    // Wait, fetchJobs maps ID to formatted ID.
+                    // But API returns Full GUID.
+                    // Let's check fetchJobs mapping: id: `JOB-...`
+                    // So I should map API JobId to this format? Or use FullId in map key?
+                    // In UI: const quote = submittedQuotes[job.id];
+                    // job.id is formatted.
+                    // So I must format keys in quotesMap OR use job.fullId in lookup.
+                    // The lookup uses job.id (formatted). So I will format the key here.
+                    quotesMap[`JOB-${q.jobId.substring(0, 8).toUpperCase()}`] = {
+                        amount: q.quoteAmount,
+                        date: new Date(q.estimatedDeliveryDate).toLocaleDateString(),
+                        timestamp: q.createdAt
+                    };
+                });
+                setSubmittedQuotes(quotesMap);
+            }
+        } catch (error) {
+            console.error("Failed to fetch my quotes", error);
         }
-    ];
+    };
+
+    const fetchJobs = async () => {
+        setLoading(true);
+        try {
+            const response = await fetch('http://localhost:5081/api/BuyerLogisticsJob/available');
+            if (response.ok) {
+                const data = await response.json();
+                // Transform data to match expected format
+                const transformedJobs = data.map(job => ({
+                    id: `JOB-${job.id.substring(0, 8).toUpperCase()}`,
+                    fullId: job.id, // Keep full ID for API calls
+                    orderId: 'N/A',
+                    pickupAddressLine1: job.pickupAddressLine1,
+                    pickupAddressLine2: job.pickupAddressLine2,
+                    pickupLandmark: job.pickupLandmark,
+                    pickupCity: job.pickupCity,
+                    pickupState: job.pickupState,
+                    pickupPincode: job.pickupPincode,
+                    pickupCountry: 'India',
+                    dropAddressLine1: job.dropAddressLine1,
+                    dropAddressLine2: job.dropAddressLine2,
+                    dropLandmark: job.dropLandmark,
+                    dropCity: job.dropCity,
+                    dropState: job.dropState,
+                    dropPincode: job.dropPincode,
+                    dropCountry: 'India',
+                    estimatedWeightKg: job.totalWeight,
+                    palletCount: job.palletCount,
+                    materialType: job.materialType,
+                    isFragile: job.isFragile,
+                    isHighValue: job.isHighValue,
+                    pickupDate: job.pickupDate,
+                    pickupTimeSlot: job.pickupTimeSlot,
+                    deliveryExpectedDate: job.deliveryExpectedDate,
+                    shipmentPriority: job.shipmentPriority,
+                    senderName: job.senderName,
+                    senderCompanyName: job.senderCompanyName,
+                    senderMobile: job.senderMobile,
+                    senderEmail: job.senderEmail,
+                    status: job.status === 'Active' ? 'Pending' : job.status,
+                    eta: new Date(job.deliveryExpectedDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                }));
+                setJobs(transformedJobs);
+            }
+        } catch (error) {
+            console.error("Failed to fetch jobs", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     // Filtering Logic
     const filteredJobs = jobs.filter(job => {
@@ -114,25 +142,48 @@ const AvailableJobs = () => {
         setShowQuoteModal(true);
     };
 
-    const handleQuoteSubmit = (e) => {
+    const handleQuoteSubmit = async (e) => {
         e.preventDefault();
-        // Here you would typically send the data to the backend
-        console.log("Submitting Quote for", selectedJob.id, quoteForm);
 
-        const newQuotes = {
-            ...submittedQuotes,
-            [selectedJob.id]: {
-                amount: quoteForm.amount,
-                date: quoteForm.date,
-                timestamp: new Date().toISOString()
+        try {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5081/api/BuyerLogisticsJob/quote', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({
+                    JobId: selectedJob.fullId,
+                    QuoteAmount: parseFloat(quoteForm.amount),
+                    EstimatedDeliveryDate: quoteForm.date
+                })
+            });
+
+            if (response.ok) {
+                const newQuote = await response.json();
+
+                // Update local state immediately
+                setSubmittedQuotes(prev => ({
+                    ...prev,
+                    [selectedJob.id]: {
+                        amount: newQuote.quoteAmount,
+                        date: new Date(newQuote.estimatedDeliveryDate).toLocaleDateString(),
+                        timestamp: newQuote.createdAt
+                    }
+                }));
+
+                setShowQuoteModal(false);
+                // Optionally show success message (toast)
+                alert(`Quote submitted for ${selectedJob.id} successfully!`);
+            } else {
+                console.error("Failed to submit quote");
+                alert("Failed to submit quote. Please try again.");
             }
-        };
-
-        setSubmittedQuotes(newQuotes);
-        localStorage.setItem('submittedQuotes', JSON.stringify(newQuotes));
-
-        setShowQuoteModal(false);
-        alert(`Quote submitted for ${selectedJob.id} successfully!`);
+        } catch (error) {
+            console.error("Error submitting quote", error);
+            alert("Error submitting quote. Check console.");
+        }
     };
 
     return (
@@ -142,8 +193,9 @@ const AvailableJobs = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
                     <div style={{ fontSize: '1.5rem', fontWeight: '700', color: 'var(--text-main)', cursor: 'pointer' }} onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }}>TriLink</div>
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
-                        <a href="#" onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</a>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</span>
                         <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/available-jobs/${userId}`); }} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Search Jobs</span>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/quoted-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Quoted Jobs</span>
                         <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/assigned-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Assigned Jobs</span>
                     </div>
                 </div>
@@ -202,126 +254,165 @@ const AvailableJobs = () => {
                     </div>
                 </div>
 
-                <div style={{ display: 'grid', gap: '1.5rem' }}>
-                    {filteredJobs.length > 0 ? filteredJobs.map((job, index) => {
-                        const quote = submittedQuotes[job.id];
+                {loading ? (
+                    <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>
+                        <p>Loading available jobs...</p>
+                    </div>
+                ) : (
+                    <div style={{ display: 'grid', gap: '1.5rem' }}>
+                        {filteredJobs.length > 0 ? filteredJobs.map((job, index) => {
+                            const quote = submittedQuotes[job.id];
 
-                        return (
-                            <div key={index} className="card" style={{ padding: '1.5rem' }}>
-                                {/* Top Row: IDs and Status */}
-                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
-                                    <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-                                        <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '1.1rem' }}>
-                                            Job ID: {job.id}
-                                        </div>
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', background: '#f1f5f9', padding: '0.2rem 0.6rem', borderRadius: '4px' }}>
-                                            Order ID: {job.orderId}
-                                        </div>
-                                        {quote && (
-                                            <div style={{
-                                                display: 'flex', alignItems: 'center', gap: '0.5rem',
-                                                background: '#f0fdf4', color: '#16a34a', padding: '0.2rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', border: '1px solid #bbf7d0'
-                                            }}>
-                                                <span>Quoted: ₹{quote.amount}</span>
+                            return (
+                                <div key={index} className="card" style={{ padding: '1.5rem' }}>
+                                    {/* Top Row: IDs and Status */}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--border)', paddingBottom: '1rem' }}>
+                                        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                                            <div style={{ fontWeight: '600', color: 'var(--text-main)', fontSize: '1.1rem' }}>
+                                                Job ID: {job.id}
                                             </div>
+                                            {quote && (
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', gap: '0.5rem',
+                                                    background: '#f0fdf4', color: '#16a34a', padding: '0.2rem 0.8rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', border: '1px solid #bbf7d0'
+                                                }}>
+                                                    <span>Quoted: ₹{quote.amount}</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <span style={{
+                                            fontSize: '0.8rem', padding: '0.3rem 0.8rem', borderRadius: '20px', fontWeight: '500',
+                                            background: job.status === 'Urgent' ? '#fef2f2' : '#ecfdf5',
+                                            color: job.status === 'Urgent' ? '#ef4444' : '#059669'
+                                        }}>
+                                            {job.status}
+                                        </span>
+                                    </div>
+
+                                    {/* Middle Row: Details Grid */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+
+                                        {/* Route Section */}
+                                        <div style={{ padding: '1.5rem', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                <div style={{ display: 'flex', alignItems: 'start', gap: '0.75rem' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: '#dbeafe', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        <MapPin size={18} color="#3b82f6" />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: '600' }}>PICKUP LOCATION</div>
+                                                        <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>{job.pickupAddressLine1}</div>
+                                                        {job.pickupAddressLine2 && <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{job.pickupAddressLine2}</div>}
+                                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{job.pickupCity}, {job.pickupState} - {job.pickupPincode}</div>
+                                                        {job.pickupLandmark && <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>📍 {job.pickupLandmark}</div>}
+                                                    </div>
+                                                </div>
+
+                                                <div style={{ height: '2px', background: 'linear-gradient(90deg, #3b82f6 0%, #22c55e 100%)', marginLeft: '2.5rem' }}></div>
+
+                                                <div style={{ display: 'flex', alignItems: 'start', gap: '0.75rem' }}>
+                                                    <div style={{ width: '32px', height: '32px', background: '#dcfce7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                                        <MapPin size={18} color="#22c55e" />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginBottom: '0.25rem', fontWeight: '600' }}>DROP LOCATION</div>
+                                                        <div style={{ fontWeight: '600', color: '#1e293b', marginBottom: '0.25rem' }}>{job.dropAddressLine1}</div>
+                                                        {job.dropAddressLine2 && <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{job.dropAddressLine2}</div>}
+                                                        <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>{job.dropCity}, {job.dropState} - {job.dropPincode}</div>
+                                                        {job.dropLandmark && <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>📍 {job.dropLandmark}</div>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Details Grid */}
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', padding: '0 0.5rem' }}>
+                                            {/* Shipment Info */}
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Shipment Info</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                    <Package size={16} color="#6366f1" />
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{job.palletCount || 1} Pallet{job.palletCount > 1 ? 's' : ''}</span>
+                                                </div>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                                    Weight: <span style={{ fontWeight: '600', color: '#1e293b' }}>{job.estimatedWeightKg} kg</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Expected Delivery */}
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Expected Delivery</div>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                                                    <Calendar size={16} color="#f59e0b" />
+                                                    <span style={{ fontSize: '0.9rem', fontWeight: '600' }}>{job.eta}</span>
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>
+                                                    By End of Day
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.25rem' }}>
+                                                    Priority: <span style={{ fontWeight: '600', color: job.shipmentPriority === 'Express' ? '#ef4444' : '#1e293b' }}>{job.shipmentPriority}</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Material */}
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Material</div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e293b' }}>{job.materialType || 'General'}</div>
+                                                <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', flexWrap: 'wrap' }}>
+                                                    {job.isFragile && (
+                                                        <span style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#92400e', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>Fragile</span>
+                                                    )}
+                                                    {job.isHighValue && (
+                                                        <span style={{ fontSize: '0.75rem', background: '#fce7f3', color: '#831843', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>High Value</span>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            {/* Sender Contact */}
+                                            <div>
+                                                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.5rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Sender</div>
+                                                <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#1e293b' }}>{job.senderName}</div>
+                                                {job.senderCompanyName && <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '0.15rem' }}>{job.senderCompanyName}</div>}
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>{job.senderMobile}</div>
+                                                {job.senderEmail && <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>{job.senderEmail}</div>}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Action Button */}
+                                    <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
+                                        {quote ? (
+                                            <>
+                                                <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                                                    Quoted delivery by: <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{quote.date}</span>
+                                                </div>
+                                                <button
+                                                    disabled
+                                                    className="btn"
+                                                    style={{ padding: '0.6rem 2rem', background: '#e2e8f0', color: 'var(--text-muted)', cursor: 'not-allowed' }}
+                                                >
+                                                    Quote Submitted
+                                                </button>
+                                            </>
+                                        ) : (
+                                            <button
+                                                onClick={() => openQuoteModal(job)}
+                                                className="btn btn-primary"
+                                                style={{ padding: '0.6rem 2rem' }}
+                                            >
+                                                Add Quote
+                                            </button>
                                         )}
                                     </div>
-                                    <span style={{
-                                        fontSize: '0.8rem', padding: '0.3rem 0.8rem', borderRadius: '20px', fontWeight: '500',
-                                        background: job.status === 'Urgent' ? '#fef2f2' : '#ecfdf5',
-                                        color: job.status === 'Urgent' ? '#ef4444' : '#059669'
-                                    }}>
-                                        {job.status}
-                                    </span>
                                 </div>
-
-                                {/* Middle Row: Details Grid */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'minmax(250px, 1fr) minmax(250px, 1fr) 1fr', gap: '2rem', marginBottom: '1.5rem' }}>
-
-                                    {/* Pickup Details */}
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#2563eb', fontWeight: '600' }}>
-                                            <div style={{ width: '8px', height: '8px', background: '#2563eb', borderRadius: '50%' }}></div>
-                                            PICKUP
-                                        </div>
-                                        <div style={{ fontSize: '0.95rem', lineHeight: '1.5', color: 'var(--text-main)' }}>
-                                            <div style={{ fontWeight: '500' }}>{job.pickupAddressLine1}</div>
-                                            <div>{job.pickupAddressLine2}</div>
-                                            <div>{job.pickupCity}, {job.pickupState} - {job.pickupPincode}</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{job.pickupCountry}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Drop Details */}
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem', color: '#16a34a', fontWeight: '600' }}>
-                                            <div style={{ width: '8px', height: '8px', background: '#16a34a', borderRadius: '50%' }}></div>
-                                            DROP
-                                        </div>
-                                        <div style={{ fontSize: '0.95rem', lineHeight: '1.5', color: 'var(--text-main)' }}>
-                                            <div style={{ fontWeight: '500' }}>{job.dropAddressLine1}</div>
-                                            <div>{job.dropAddressLine2}</div>
-                                            <div>{job.dropCity}, {job.dropState} - {job.dropPincode}</div>
-                                            <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>{job.dropCountry}</div>
-                                        </div>
-                                    </div>
-
-                                    {/* Load & Time */}
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{ width: '36px', height: '36px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Package size={18} color="var(--text-muted)" />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Est. Weight</div>
-                                                <div style={{ fontWeight: '600' }}>{job.estimatedWeightKg} kg</div>
-                                            </div>
-                                        </div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                                            <div style={{ width: '36px', height: '36px', background: '#f8fafc', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                                <Calendar size={18} color="var(--text-muted)" />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>ETA by</div>
-                                                <div style={{ fontWeight: '600' }}>{job.eta}</div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Action Button */}
-                                <div style={{ borderTop: '1px solid var(--border)', paddingTop: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
-                                    {quote ? (
-                                        <>
-                                            <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                                Quoted delivery by: <span style={{ fontWeight: '600', color: 'var(--text-main)' }}>{quote.date}</span>
-                                            </div>
-                                            <button
-                                                disabled
-                                                className="btn"
-                                                style={{ padding: '0.6rem 2rem', background: '#e2e8f0', color: 'var(--text-muted)', cursor: 'not-allowed' }}
-                                            >
-                                                Quote Submitted
-                                            </button>
-                                        </>
-                                    ) : (
-                                        <button
-                                            onClick={() => openQuoteModal(job)}
-                                            className="btn btn-primary"
-                                            style={{ padding: '0.6rem 2rem' }}
-                                        >
-                                            Add Quote
-                                        </button>
-                                    )}
-                                </div>
+                            );
+                        }) : (
+                            <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
+                                <p>No jobs found matching your criteria.</p>
                             </div>
-                        );
-                    }) : (
-                        <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--text-muted)' }}>
-                            <p>No jobs found matching your criteria.</p>
-                        </div>
-                    )}
-                </div>
+                        )}
+                    </div>
+                )}
             </main>
 
             {/* Add Quote Modal */}

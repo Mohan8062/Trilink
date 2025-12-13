@@ -4,6 +4,7 @@ using Backend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Backend.Migrations
 {
     [DbContext(typeof(TriLinkDbContext))]
-    partial class TriLinkDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251213132911_campanyname added")]
+    partial class campanynameadded
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -173,40 +176,6 @@ namespace Backend.Migrations
                     b.HasIndex("BuyerId");
 
                     b.ToTable("BuyerLogisticsJobs");
-                });
-
-            modelBuilder.Entity("Backend.Models.Domain.BuyerLogisticsJobQuote", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("EstimatedDeliveryDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("LogisticsProviderId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<decimal>("QuoteAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("JobId");
-
-                    b.HasIndex("LogisticsProviderId");
-
-                    b.ToTable("BuyerLogisticsJobQuotes");
                 });
 
             modelBuilder.Entity("Backend.Models.Domain.LogisticsEntry", b =>
@@ -471,25 +440,6 @@ namespace Backend.Migrations
                     b.Navigation("Buyer");
                 });
 
-            modelBuilder.Entity("Backend.Models.Domain.BuyerLogisticsJobQuote", b =>
-                {
-                    b.HasOne("Backend.Models.Domain.BuyerLogisticsJob", "Job")
-                        .WithMany("Quotes")
-                        .HasForeignKey("JobId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Backend.Models.Domain.User", "LogisticsProvider")
-                        .WithMany()
-                        .HasForeignKey("LogisticsProviderId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Job");
-
-                    b.Navigation("LogisticsProvider");
-                });
-
             modelBuilder.Entity("Backend.Models.Domain.LogisticsEntry", b =>
                 {
                     b.HasOne("Backend.Models.Domain.Order", "Order")
@@ -588,11 +538,6 @@ namespace Backend.Migrations
                         .IsRequired();
 
                     b.Navigation("Supplier");
-                });
-
-            modelBuilder.Entity("Backend.Models.Domain.BuyerLogisticsJob", b =>
-                {
-                    b.Navigation("Quotes");
                 });
 
             modelBuilder.Entity("Backend.Models.Domain.Negotiation", b =>

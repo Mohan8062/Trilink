@@ -15,6 +15,9 @@ namespace Backend.Data
         public DbSet<Offer> Offers { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<LogisticsEntry> LogisticsEntries { get; set; }
+        public DbSet<BuyerLogisticsJob> BuyerLogisticsJobs { get; set; }
+        public DbSet<BuyerLogisticsJobQuote> BuyerLogisticsJobQuotes { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -25,6 +28,19 @@ namespace Backend.Data
                 .HasOne(p => p.Supplier)
                 .WithMany()
                 .HasForeignKey(p => p.SupplierId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // Configure BuyerLogisticsJob -> Quotes
+            modelBuilder.Entity<BuyerLogisticsJob>()
+                .HasMany(j => j.Quotes)
+                .WithOne(q => q.Job)
+                .HasForeignKey(q => q.JobId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<BuyerLogisticsJobQuote>()
+                .HasOne(q => q.LogisticsProvider)
+                .WithMany()
+                .HasForeignKey(q => q.LogisticsProviderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // Configure Negotiation -> Buyer & Seller
@@ -79,6 +95,18 @@ namespace Backend.Data
             modelBuilder.Entity<Offer>().Property(o => o.Amount).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<Order>().Property(o => o.FinalPrice).HasColumnType("decimal(18,2)");
             modelBuilder.Entity<LogisticsEntry>().Property(l => l.ProposedCost).HasColumnType("decimal(18,2)");
+            
+            // Configure BuyerLogisticsJob
+            modelBuilder.Entity<BuyerLogisticsJob>()
+                .HasOne(b => b.Buyer)
+                .WithMany()
+                .HasForeignKey(b => b.BuyerId)
+                .OnDelete(DeleteBehavior.Restrict);
+                
+            modelBuilder.Entity<BuyerLogisticsJob>().Property(b => b.TotalWeight).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<BuyerLogisticsJob>().Property(b => b.Length).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<BuyerLogisticsJob>().Property(b => b.Width).HasColumnType("decimal(18,2)");
+            modelBuilder.Entity<BuyerLogisticsJob>().Property(b => b.Height).HasColumnType("decimal(18,2)");
         }
     }
 }

@@ -1,27 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Bell, User, ChevronLeft, MapPin, Truck, Package, Calendar, Eye, X } from 'lucide-react';
+import { Bell, User, ChevronLeft, Truck, Package, Calendar, MapPin, X, Eye } from 'lucide-react';
 import '../../index.css';
 
-const AssignedJobs = () => {
+const QuotedJobs = () => {
     const navigate = useNavigate();
-    const [assignedJobs, setAssignedJobs] = useState([]);
+    const [quotedJobs, setQuotedJobs] = useState([]);
     const [loading, setLoading] = useState(true);
     const [selectedJob, setSelectedJob] = useState(null);
 
     useEffect(() => {
-        fetchAssignedJobs();
+        fetchQuotedJobs();
     }, []);
 
-    const fetchAssignedJobs = async () => {
+    const fetchQuotedJobs = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://localhost:5081/api/BuyerLogisticsJob/assigned', {
+            const response = await fetch('http://localhost:5081/api/BuyerLogisticsJob/my-quotes', {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             if (response.ok) {
                 const data = await response.json();
-                setAssignedJobs(data);
+                setQuotedJobs(data);
             }
         } catch (error) {
             console.error(error);
@@ -30,41 +30,8 @@ const AssignedJobs = () => {
         }
     };
 
-    const handleUpdateStatus = async (jobId, newStatus) => {
-        try {
-            const token = localStorage.getItem('token');
-            const response = await fetch(`http://localhost:5081/api/BuyerLogisticsJob/${jobId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
-                body: JSON.stringify(newStatus)
-            });
-
-            if (response.ok) {
-                fetchAssignedJobs(); // Refresh list
-                if (selectedJob && selectedJob.id === jobId) {
-                    setSelectedJob({ ...selectedJob, status: newStatus });
-                }
-            } else {
-                alert('Failed to update status');
-            }
-        } catch (error) {
-            console.error('Error updating status:', error);
-        }
-    };
-
     const JobDetailsModal = ({ job, onClose }) => {
         if (!job) return null;
-
-        const nextStatusOptions = {
-            'Assigned': 'Picked Up',
-            'Picked Up': 'In Transit',
-            'In Transit': 'Delivered'
-        };
-
-        const nextStatus = nextStatusOptions[job.status];
 
         return (
             <div className="modal-overlay" onClick={onClose} style={{
@@ -82,10 +49,10 @@ const AssignedJobs = () => {
 
                     <h2 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         <Truck size={28} color="#3b82f6" />
-                        Job Details #{job.id?.substring(0, 8).toUpperCase()}
+                        Job Details #{job.jobId?.substring(0, 8).toUpperCase()}
                     </h2>
                     <div style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: '2rem', paddingLeft: '2.5rem' }}>
-                        Created on {new Date(job.createdAt).toLocaleDateString()}
+                        Posted on {new Date(job.createdAt).toLocaleDateString()}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '2rem' }}>
@@ -98,11 +65,11 @@ const AssignedJobs = () => {
                                     <div style={{ marginTop: '0.25rem' }}><MapPin size={20} color="#3b82f6" /></div>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '0.25rem' }}>PICKUP</div>
-                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.pickupAddressLine1}</div>
-                                        {job.pickupAddressLine2 && <div style={{ color: '#475569', fontSize: '0.9rem' }}>{job.pickupAddressLine2}</div>}
-                                        <div style={{ color: '#475569' }}>{job.pickupCity}, {job.pickupState} - {job.pickupPincode}</div>
+                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.jobPickupAddressLine1}</div>
+                                        {job.jobPickupAddressLine2 && <div style={{ color: '#475569', fontSize: '0.9rem' }}>{job.jobPickupAddressLine2}</div>}
+                                        <div style={{ color: '#475569' }}>{job.jobPickupCity}, {job.jobPickupState} - {job.jobPickupPincode}</div>
                                         <div style={{ fontSize: '0.85rem', color: '#3b82f6', marginTop: '0.25rem', fontWeight: '500' }}>
-                                            SCHEDULED: {new Date(job.pickupDate).toLocaleDateString()}
+                                            SCHEDULED: {new Date(job.jobPickupDate).toLocaleDateString()}
                                         </div>
                                     </div>
                                 </div>
@@ -113,11 +80,11 @@ const AssignedJobs = () => {
                                     <div style={{ marginTop: '0.25rem' }}><MapPin size={20} color="#22c55e" /></div>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', fontWeight: '700', color: '#64748b', marginBottom: '0.25rem' }}>DROP</div>
-                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.dropAddressLine1}</div>
-                                        {job.dropAddressLine2 && <div style={{ color: '#475569', fontSize: '0.9rem' }}>{job.dropAddressLine2}</div>}
-                                        <div style={{ color: '#475569' }}>{job.dropCity}, {job.dropState} - {job.dropPincode}</div>
+                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.jobDropAddressLine1}</div>
+                                        {job.jobDropAddressLine2 && <div style={{ color: '#475569', fontSize: '0.9rem' }}>{job.jobDropAddressLine2}</div>}
+                                        <div style={{ color: '#475569' }}>{job.jobDropCity}, {job.jobDropState} - {job.jobDropPincode}</div>
                                         <div style={{ fontSize: '0.85rem', color: '#ea580c', marginTop: '0.25rem', fontWeight: '500' }}>
-                                            EXPECTED: {new Date(job.deliveryExpectedDate).toLocaleDateString()}
+                                            EXPECTED: {new Date(job.jobDeliveryExpectedDate).toLocaleDateString()}
                                         </div>
                                     </div>
                                 </div>
@@ -133,57 +100,60 @@ const AssignedJobs = () => {
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Total Weight</div>
-                                        <div style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1e293b' }}>{job.totalWeight} kg</div>
+                                        <div style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1e293b' }}>{job.jobTotalWeight} kg</div>
                                     </div>
                                     <div>
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Pallet Count</div>
-                                        <div style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1e293b' }}>{job.palletCount}</div>
+                                        <div style={{ fontWeight: '600', fontSize: '1.1rem', color: '#1e293b' }}>{job.jobPalletCount}</div>
                                     </div>
                                     <div style={{ gridColumn: '1 / -1' }}>
                                         <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Material Type</div>
-                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.materialType || 'General'}</div>
+                                        <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.jobMaterialType || 'General'}</div>
                                     </div>
-                                    {(job.length && job.width && job.height) && (
+                                    {(job.jobLength && job.jobWidth && job.jobHeight) && (
                                         <div style={{ gridColumn: '1 / -1' }}>
                                             <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Dimensions (L x W x H)</div>
-                                            <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.length} x {job.width} x {job.height} cm</div>
+                                            <div style={{ fontWeight: '600', color: '#1e293b' }}>{job.jobLength} x {job.jobWidth} x {job.jobHeight} cm</div>
                                         </div>
                                     )}
+                                    <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '0.5rem' }}>
+                                        {job.jobIsFragile && <span style={{ fontSize: '0.75rem', background: '#fef3c7', color: '#92400e', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>Fragile</span>}
+                                        {job.jobIsHighValue && <span style={{ fontSize: '0.75rem', background: '#fce7f3', color: '#831843', padding: '0.25rem 0.5rem', borderRadius: '4px', fontWeight: '600' }}>High Value</span>}
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Status Update Action */}
+                        {/* Quote Status */}
                         <div>
                             <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '1rem', color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                Manage Job
+                                Quote Status
                             </h3>
-                            <div style={{ background: '#f0f9ff', border: '1px solid #bae6fd', borderRadius: '12px', padding: '1.25rem' }}>
+                            <div style={{ background: job.status === 'Accepted' ? '#f0fdf4' : '#fff', border: `1px solid ${job.status === 'Accepted' ? '#bbf7d0' : '#e2e8f0'}`, borderRadius: '12px', padding: '1.25rem' }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>current Status</div>
-                                    <span style={{ padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600', background: '#e0f2fe', color: '#0284c7' }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Quote Amount</div>
+                                    <div style={{ fontSize: '1.25rem', fontWeight: '700', color: '#16a34a' }}>₹{job.quoteAmount}</div>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                    <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Status</div>
+                                    <span style={{
+                                        padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600',
+                                        background: job.status === 'Accepted' ? '#dcfce7' : (job.status === 'Rejected' ? '#fee2e2' : '#f1f5f9'),
+                                        color: job.status === 'Accepted' ? '#16a34a' : (job.status === 'Rejected' ? '#991b1b' : '#64748b')
+                                    }}>
                                         {job.status}
                                     </span>
                                 </div>
-                                {nextStatus && (
-                                    <button
-                                        onClick={() => handleUpdateStatus(job.id, nextStatus)}
-                                        className="btn btn-primary"
-                                        style={{ width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}
-                                    >
-                                        Update to {nextStatus}
-                                    </button>
-                                )}
-                                {!nextStatus && (
-                                    <div style={{ textAlign: 'center', color: '#16a34a', fontWeight: '600' }}>Job Completed</div>
-                                )}
+                                <div style={{ fontSize: '0.85rem', color: '#64748b', marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid #e2e8f0' }}>
+                                    Target Delivery: <span style={{ fontWeight: '600', color: '#1e293b' }}>{new Date(job.estimatedDeliveryDate).toLocaleDateString()}</span>
+                                </div>
                             </div>
                         </div>
 
                     </div>
 
                     <div style={{ marginTop: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-                        <button onClick={onClose} className="btn-secondary" style={{ padding: '0.75rem 2rem' }}>Close</button>
+                        <button onClick={onClose} className="btn btn-primary" style={{ padding: '0.75rem 2rem' }}>Close</button>
                     </div>
                 </div>
             </div>
@@ -199,8 +169,8 @@ const AssignedJobs = () => {
                     <div style={{ display: 'flex', gap: '2rem', fontSize: '0.95rem', fontWeight: '500' }}>
                         <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/dashboard/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Dashboard</span>
                         <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/available-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Search Jobs</span>
-                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/quoted-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Quoted Jobs</span>
-                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/assigned-jobs/${userId}`); }} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Assigned Jobs</span>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/quoted-jobs/${userId}`); }} style={{ color: 'var(--text-main)', cursor: 'pointer' }}>Quoted Jobs</span>
+                        <span onClick={() => { const userId = localStorage.getItem('userId'); navigate(`/logistics/assigned-jobs/${userId}`); }} style={{ color: 'var(--text-muted)', cursor: 'pointer' }}>Assigned Jobs</span>
                     </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
@@ -222,14 +192,14 @@ const AssignedJobs = () => {
                     >
                         <ChevronLeft size={20} /> Back
                     </button>
-                    <h1 style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--text-main)' }}>Assigned Jobs</h1>
+                    <h1 style={{ fontSize: '2rem', fontWeight: '600', color: 'var(--text-main)' }}>My Quoted Jobs</h1>
                 </div>
 
                 {loading ? (
                     <div>Loading...</div>
-                ) : assignedJobs.length === 0 ? (
+                ) : quotedJobs.length === 0 ? (
                     <div className="card" style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-                        You have no assigned jobs yet.
+                        You haven't submitted any quotes yet.
                     </div>
                 ) : (
                     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
@@ -238,30 +208,46 @@ const AssignedJobs = () => {
                                 <tr>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Job ID</th>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Route</th>
-                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Date</th>
-                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Status</th>
+
+                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>My Quote</th>
+                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Job Status</th>
+                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Quote Status</th>
+                                    <th style={{ padding: '1rem 1.5rem', textAlign: 'left', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Est. Delivery</th>
                                     <th style={{ padding: '1rem 1.5rem', textAlign: 'center', fontSize: '0.85rem', color: 'var(--text-muted)', fontWeight: '600' }}>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
-                                {assignedJobs.map((job) => (
-                                    <tr key={job.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s', cursor: 'pointer' }} onClick={() => setSelectedJob(job)} className="hover:bg-slate-50">
-                                        <td style={{ padding: '1rem 1.5rem', fontWeight: '500' }}>#{job.id.substring(0, 8).toUpperCase()}</td>
+                                {quotedJobs.map((quote) => (
+                                    <tr key={quote.id} style={{ borderBottom: '1px solid var(--border)', transition: 'background-color 0.2s', cursor: 'pointer' }} onClick={() => setSelectedJob(quote)} className="hover:bg-slate-50">
+                                        <td style={{ padding: '1rem 1.5rem', fontWeight: '500' }}>#{quote.jobId.substring(0, 8).toUpperCase()}</td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
-                                            {job.pickupCity} → {job.dropCity}
+                                            {quote.jobPickupCity} → {quote.jobDropCity}
                                         </td>
-                                        <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{new Date(job.pickupDate).toLocaleDateString()}</td>
+
+                                        <td style={{ padding: '1rem 1.5rem', fontWeight: '600', color: '#16a34a' }}>
+                                            ₹{quote.quoteAmount}
+                                        </td>
                                         <td style={{ padding: '1rem 1.5rem' }}>
                                             <span style={{
-                                                padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '600',
-                                                background: '#e0f2fe', color: '#0284c7'
+                                                padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500',
+                                                background: '#f1f5f9', color: 'var(--text-main)'
                                             }}>
-                                                {job.status}
+                                                {quote.jobStatus}
                                             </span>
                                         </td>
+                                        <td style={{ padding: '1rem 1.5rem' }}>
+                                            <span style={{
+                                                padding: '0.25rem 0.75rem', borderRadius: '20px', fontSize: '0.85rem', fontWeight: '500',
+                                                background: quote.status === 'Accepted' ? '#dcfce7' : (quote.status === 'Rejected' ? '#fee2e2' : '#f1f5f9'),
+                                                color: quote.status === 'Accepted' ? '#16a34a' : (quote.status === 'Rejected' ? '#991b1b' : '#64748b')
+                                            }}>
+                                                {quote.status}
+                                            </span>
+                                        </td>
+                                        <td style={{ padding: '1rem 1.5rem', color: 'var(--text-muted)' }}>{new Date(quote.estimatedDeliveryDate).toLocaleDateString()}</td>
                                         <td style={{ padding: '1rem 1.5rem', textAlign: 'center' }}>
                                             <button
-                                                onClick={(e) => { e.stopPropagation(); setSelectedJob(job); }}
+                                                onClick={(e) => { e.stopPropagation(); setSelectedJob(quote); }}
                                                 style={{ background: '#3b82f6', color: 'white', border: 'none', padding: '0.4rem 0.8rem', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
                                             >
                                                 <Eye size={14} /> View
@@ -281,4 +267,4 @@ const AssignedJobs = () => {
     );
 };
 
-export default AssignedJobs;
+export default QuotedJobs;
